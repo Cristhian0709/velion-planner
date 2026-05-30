@@ -3,7 +3,6 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -12,7 +11,7 @@ import {
 
 import { router } from "expo-router";
 import { useState } from "react";
-
+import { styles } from "../assets/css/loginStyles";
 import { loginUser } from "../services/authService";
 
 export default function Login() {
@@ -35,7 +34,7 @@ export default function Login() {
 
     // Validar autenticación
     if (usuarioEncontrado) {
-      router.push("/home");
+      router.push("/dashboard");
     } else {
       Alert.alert("Error", "Datos incorrectos");
     }
@@ -60,16 +59,12 @@ export default function Login() {
       <View style={styles.formCard}>
         <Text style={styles.title}>Acceso a Portafolio</Text>
 
-        <Text style={styles.subtitle}>
-          Ingrese sus credenciales corporativas.
-        </Text>
-
         {/* Correo */}
         <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
 
         <TextInput
           placeholder="nombre@velion.com"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#0c1829"
           style={styles.input}
           value={correo}
           onChangeText={setCorreo}
@@ -80,10 +75,6 @@ export default function Login() {
         {/* Contraseña */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>CONTRASEÑA</Text>
-
-          <TouchableOpacity>
-            <Text style={styles.linkText}>Recuperar</Text>
-          </TouchableOpacity>
         </View>
 
         <TextInput
@@ -94,13 +85,6 @@ export default function Login() {
           value={password}
           onChangeText={setPassword}
         />
-
-        {/* Checkbox */}
-        <View style={styles.checkboxRow}>
-          <View style={styles.checkbox} />
-
-          <Text style={styles.checkboxLabel}>Mantener sesión abierta</Text>
-        </View>
 
         {/* Botón */}
         <TouchableOpacity
@@ -129,150 +113,3 @@ export default function Login() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F172A",
-  },
-
-  header: {
-    paddingVertical: 60,
-    alignItems: "center",
-  },
-
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  brandName: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-
-  formCard: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 30,
-    paddingTop: 40,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1E293B",
-    marginBottom: 5,
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: "#64748B",
-    marginBottom: 30,
-  },
-
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  label: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#475569",
-    marginBottom: 8,
-  },
-
-  linkText: {
-    fontSize: 11,
-    color: "#3B82F6",
-  },
-
-  input: {
-    backgroundColor: "#fff",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-  },
-
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 4,
-    marginRight: 10,
-  },
-
-  checkboxLabel: {
-    fontSize: 13,
-    color: "#64748B",
-  },
-
-  button: {
-    backgroundColor: "#0F172A",
-    padding: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
-  footerInfo: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 40,
-  },
-
-  noAccount: {
-    color: "#64748B",
-  },
-
-  tiText: {
-    fontWeight: "bold",
-    color: "#1E293B",
-  },
-
-  legalRow: {
-    marginTop: "auto",
-    marginBottom: 20,
-    alignItems: "center",
-  },
-
-  legalText: {
-    fontSize: 10,
-    color: "#94A3B8",
-    letterSpacing: 1,
-  },
-
-  logo: {
-    width: 35,
-    height: 35,
-    resizeMode: "contain",
-  },
-});

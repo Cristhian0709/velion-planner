@@ -1,36 +1,42 @@
-
 import React, { useState } from "react";
+
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+import { router } from "expo-router";
+
+import { Ionicons } from "@expo/vector-icons";
+
 import { BarChart, PieChart } from "react-native-chart-kit";
+
 import {
-  mockSummary,
   mockAvanceProyectos,
+  mockDepartamentos,
   mockDistribucionEstado,
+  mockPeriodos,
   mockRestriccionesArea,
   mockSaludFinanciera,
-  mockPeriodos,
-  mockDepartamentos,
+  mockSummary,
 } from "../mock/dashboard";
 
 const screenWidth = Dimensions.get("window").width;
 
 const COLORS = {
-  primary: "#1565C0",
-  danger: "#E53935",
-  warning: "#FB8C00",
-  success: "#43A047",
-  background: "#F5F6FA",
+  primary: "#2563EB",
+  danger: "#EF4444",
+  warning: "#F59E0B",
+  success: "#10B981",
+  background: "#F8FAFC",
   card: "#FFFFFF",
-  text: "#1A1A2E",
-  textLight: "#6B7280",
-  border: "#E5E7EB",
+  text: "#0F172A",
+  textLight: "#64748B",
+  border: "#E2E8F0",
 };
 
 interface MetricCardProps {
@@ -39,29 +45,57 @@ interface MetricCardProps {
   subtitulo: string;
   color: string;
   badge?: string;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
-const MetricCard = ({ titulo, valor, subtitulo, color, badge }: MetricCardProps) => (
-  <View style={[styles.card, styles.metricCard]}>
-    {badge && (
-      <Text style={[styles.badge, { color }]}>{badge}</Text>
-    )}
+const MetricCard = ({
+  titulo,
+  valor,
+  subtitulo,
+  color,
+  badge,
+  icon,
+}: MetricCardProps) => (
+  <View style={styles.metricCard}>
+    <View style={styles.metricTop}>
+      <View
+        style={[
+          styles.metricIcon,
+          {
+            backgroundColor: `${color}15`,
+          },
+        ]}
+      >
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+
+      {badge && <Text style={[styles.badge, { color }]}>{badge}</Text>}
+    </View>
+
     <Text style={styles.metricTitulo}>{titulo}</Text>
+
     <Text style={[styles.metricValor, { color }]}>{valor}</Text>
+
     <Text style={styles.metricSubtitulo}>{subtitulo}</Text>
   </View>
 );
 
-
-  // FILTROS 
- 
 interface FiltroSelectorProps {
-  opciones: { label: string; value: string }[];
+  opciones: {
+    label: string;
+    value: string;
+  }[];
+
   seleccionado: string;
+
   onSelect: (value: string) => void;
 }
 
-const FiltroSelector = ({ opciones, seleccionado, onSelect }: FiltroSelectorProps) => (
+const FiltroSelector = ({
+  opciones,
+  seleccionado,
+  onSelect,
+}: FiltroSelectorProps) => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
     {opciones.map((op) => (
       <TouchableOpacity
@@ -71,8 +105,6 @@ const FiltroSelector = ({ opciones, seleccionado, onSelect }: FiltroSelectorProp
           seleccionado === op.value && styles.filtroBtnActivo,
         ]}
         onPress={() => onSelect(op.value)}
-        accessibilityRole="button"
-        accessibilityLabel={`Filtrar por ${op.label}`}
       >
         <Text
           style={[
@@ -87,382 +119,687 @@ const FiltroSelector = ({ opciones, seleccionado, onSelect }: FiltroSelectorProp
   </ScrollView>
 );
 
-// Pantalla Princioal
-
 export default function Dashboard() {
-
-  // Estado de filtros
   const [periodo, setPeriodo] = useState("30d");
+
   const [departamento, setDepartamento] = useState("all");
 
-  // Datos del resumen
+  const [menuVisible, setMenuVisible] = useState(false);
+
   const summary = mockSummary;
+
   const saludFinanciera = mockSaludFinanciera;
 
-  // Datos para gráfico de barras
   const barData = {
     labels: mockAvanceProyectos.map((d) => d.label),
-    datasets: [{ data: mockAvanceProyectos.map((d) => d.value) }],
+
+    datasets: [
+      {
+        data: mockAvanceProyectos.map((d) => d.value),
+      },
+    ],
   };
 
-  // Datos para gráfico de pastel
   const pieData = mockDistribucionEstado.map((d, i) => ({
     name: d.label,
+
     population: d.value,
+
     color: [COLORS.primary, COLORS.success, COLORS.danger][i],
+
     legendFontColor: COLORS.text,
+
     legendFontSize: 12,
   }));
 
-  // Configuración base de gráficos
   const chartConfig = {
     backgroundGradientFrom: COLORS.card,
+
     backgroundGradientTo: COLORS.card,
-    color: (opacity = 1) => `rgba(21, 101, 192, ${opacity})`,
+
+    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+
     labelColor: () => COLORS.textLight,
-    barPercentage: 0.6,
+
     decimalPlaces: 0,
+
+    barPercentage: 0.6,
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HEADER */}
 
-      {/* ── Para la exportar datos ── */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
-        <TouchableOpacity style={styles.exportBtn} accessibilityRole="button" accessibilityLabel="Exportar datos">
-          <Text style={styles.exportBtnText}>↑ Exportar</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setMenuVisible(!menuVisible)}
+          >
+            <Ionicons name="menu" size={28} color="#0F172A" />
+          </TouchableOpacity>
 
-      {/* ── Filtros ── */}
-      <View style={styles.filtrosRow}>
-        <View style={styles.filtroGroup}>
-          <Text style={styles.filtroLabel}>PERÍODO</Text>
-          <FiltroSelector
-            opciones={mockPeriodos}
-            seleccionado={periodo}
-            onSelect={setPeriodo}
+          <Text style={styles.headerSub}>PORTAFOLIO EJECUTIVO</Text>
+
+          <Text style={styles.headerTitle}>Panel Ejecutivo</Text>
+
+          <Text style={styles.headerDescription}>
+            Resumen ejecutivo del portafolio y seguimiento general de proyectos.
+          </Text>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.exportBtn}>
+              <Ionicons name="download-outline" size={18} color="#FFFFFF" />
+
+              <Text style={styles.exportBtnText}>Exportar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* FILTROS */}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Filtros</Text>
+
+          <View style={styles.filtroGroup}>
+            <Text style={styles.filtroLabel}>PERÍODO</Text>
+
+            <FiltroSelector
+              opciones={mockPeriodos}
+              seleccionado={periodo}
+              onSelect={setPeriodo}
+            />
+          </View>
+
+          <View style={styles.filtroGroup}>
+            <Text style={styles.filtroLabel}>DEPARTAMENTO</Text>
+
+            <FiltroSelector
+              opciones={mockDepartamentos}
+              seleccionado={departamento}
+              onSelect={setDepartamento}
+            />
+          </View>
+        </View>
+
+        {/* MÉTRICAS */}
+
+        <Text style={styles.sectionTitle}>Indicadores Principales</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.metricsRow}
+        >
+          <MetricCard
+            titulo="PROYECTOS"
+            valor={String(summary.totalProyectos)}
+            subtitulo="Activos actualmente"
+            color={COLORS.primary}
+            badge="Total"
+            icon="briefcase-outline"
+          />
+
+          <MetricCard
+            titulo="AVANCE"
+            valor={`${summary.avancePromedio}%`}
+            subtitulo="Promedio general"
+            color={COLORS.success}
+            badge="General"
+            icon="trending-up-outline"
+          />
+
+          <MetricCard
+            titulo="RETRASOS"
+            valor={String(summary.tareasRetrasadas)}
+            subtitulo="Tareas críticas"
+            color={COLORS.danger}
+            badge="Atención"
+            icon="alert-circle-outline"
+          />
+
+          <MetricCard
+            titulo="COSTO"
+            valor={`$${summary.costoAcumulado.toFixed(1)}M`}
+            subtitulo="Costo acumulado"
+            color={COLORS.warning}
+            badge="Finanzas"
+            icon="cash-outline"
+          />
+        </ScrollView>
+
+        {/* BARRAS */}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Avance por Proyecto</Text>
+
+          <BarChart
+            data={barData}
+            width={screenWidth - 80}
+            height={240}
+            yAxisLabel=""
+            yAxisSuffix="%"
+            chartConfig={chartConfig}
+            style={styles.chart}
+            showValuesOnTopOfBars
           />
         </View>
-        <View style={styles.filtroGroup}>
-          <Text style={styles.filtroLabel}>DEPARTAMENTO</Text>
-          <FiltroSelector
-            opciones={mockDepartamentos}
-            seleccionado={departamento}
-            onSelect={setDepartamento}
+
+        {/* PIE */}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Estado General</Text>
+
+          <PieChart
+            data={pieData}
+            width={screenWidth - 80}
+            height={220}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="10"
           />
         </View>
-      </View>
 
-      {/* ── Tarjetas de métricas ── */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.metricsRow}>
-        <MetricCard
-          titulo="TOTAL PROYECTOS"
-          valor={String(summary.totalProyectos)}
-          subtitulo="Activos en el sistema"
-          color={COLORS.primary}
-          badge="Total"
-        />
-        <MetricCard
-          titulo="AVANCE PROMEDIO"
-          valor={`${summary.avancePromedio}%`}
-          subtitulo=""
-          color={COLORS.success}
-          badge="General"
-        />
-        <MetricCard
-          titulo="TAREAS RETRASADAS"
-          valor={String(summary.tareasRetrasadas)}
-          subtitulo="Requieren intervención crítica"
-          color={COLORS.danger}
-          badge="Atención"
-        />
-        <MetricCard
-          titulo="COSTO ACUMULADO"
-          valor={`$${summary.costoAcumulado.toFixed(1)}M`}
-          subtitulo={`Presupuesto total: $${summary.presupuestoTotal.toFixed(1)}M`}
-          color={COLORS.warning}
-          badge="0%"
-        />
+        {/* RESTRICCIONES */}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Restricciones por Área</Text>
+
+          {mockRestriccionesArea.map((item) => (
+            <View key={item.area} style={styles.restriccionRow}>
+              <View style={styles.restriccionHeader}>
+                <Text style={styles.restriccionLabel}>{item.area}</Text>
+
+                <Text style={styles.restriccionValue}>
+                  {item.criticas} críticas
+                </Text>
+              </View>
+
+              <View style={styles.barContainer}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      width: `${(item.criticas / 10) * 100}%`,
+                      backgroundColor: COLORS.danger,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* SALUD */}
+
+        <View style={[styles.card, styles.saludCard]}>
+          <Text style={styles.cardTitle}>Salud Financiera</Text>
+
+          <Text style={styles.saludSubtitulo}>
+            Estado presupuestal consolidado del portafolio.
+          </Text>
+
+          <View style={styles.saludCircle}>
+            <Text style={styles.saludPorcentaje}>
+              {saludFinanciera.porcentajeUtilizado}%
+            </Text>
+
+            <Text style={styles.saludUtilizado}>UTILIZADO</Text>
+          </View>
+        </View>
+
+        <View style={{ height: 80 }} />
       </ScrollView>
 
-      {/* ── Gráfico de barras — Avance por proyecto ── */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Avance por Proyecto</Text>
-        <BarChart
-          data={barData}
-          width={screenWidth - 48}
-          height={200}
-          chartConfig={chartConfig}
-          style={styles.chart}
-          showValuesOnTopOfBars
-          yAxisLabel=""
-          yAxisSuffix="%"
-        />
-      </View>
+      {/* MENU */}
 
-      {/* ── Gráfico de pastel — Distribución por estado ── */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Distribución por Estado</Text>
-        <PieChart
-          data={pieData}
-          width={screenWidth - 48}
-          height={180}
-          chartConfig={chartConfig}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft="16"
-        />
-      </View>
+      {menuVisible && (
+        <View style={styles.overlay}>
+          <View style={styles.sideMenu}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Velion Planner</Text>
 
-      {/* ── Restricciones por área ── */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Distribución de restricciones por área</Text>
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: COLORS.danger }]} />
-            <Text style={styles.legendText}>Críticas</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
-            <Text style={styles.legendText}>Abiertas</Text>
+              <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                <Ionicons name="close" size={24} color="#0F172A" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+
+                router.push("/cronograma");
+              }}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#2563EB" />
+
+              <Text style={styles.menuText}>Cronograma</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <Ionicons name="settings-outline" size={20} color="#2563EB" />
+
+              <Text style={styles.menuText}>Configuración</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        {mockRestriccionesArea.map((item) => (
-          <View key={item.area} style={styles.restriccionRow}>
-            <Text style={styles.restriccionLabel}>{item.area}</Text>
-            <View style={styles.barContainer}>
-              <View
-                style={[
-                  styles.barFill,
-                  {
-                    width: `${(item.criticas / 10) * 100}%`,
-                    backgroundColor: COLORS.danger,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.barContainer}>
-              <View
-                style={[
-                  styles.barFill,
-                  {
-                    width: `${(item.abiertas / 10) * 100}%`,
-                    backgroundColor: COLORS.primary,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* ── Salud financiera ── */}
-      <View style={[styles.card, styles.saludCard]}>
-        <Text style={styles.cardTitle}>Salud financiera</Text>
-        <Text style={styles.saludSubtitulo}>Ejecución presupuestal real del portafolio.</Text>
-        <View style={styles.saludCircle}>
-          <Text style={styles.saludPorcentaje}>{saludFinanciera.porcentajeUtilizado}%</Text>
-          <Text style={styles.saludUtilizado}>UTILIZADO</Text>
-        </View>
-      </View>
-
-    </ScrollView>
+      )}
+    </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 80,
   },
 
-  // Header
+  /* HEADER */
+
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 24,
+    position: "relative",
   },
+
+  headerSub: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.text,
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#0F172A",
+    paddingRight: 80,
   },
+
+  headerDescription: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#64748B",
+    lineHeight: 22,
+    paddingRight: 50,
+  },
+
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 24,
+  },
+
   exportBtn: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  exportBtnText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
+
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+
+    borderRadius: 16,
+
+    flexDirection: "row",
+    alignItems: "center",
+
+    marginLeft: "auto",
   },
 
-  // Filtros
-  filtrosRow: {
-    marginBottom: 16,
-    gap: 8,
+  exportBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    marginLeft: 8,
   },
+
+  menuButton: {
+    position: "absolute",
+
+    top: 0,
+    right: 0,
+
+    width: 56,
+    height: 56,
+
+    borderRadius: 18,
+
+    backgroundColor: "#FFFFFF",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+
+    shadowColor: "#000",
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+
+    elevation: 5,
+
+    zIndex: 999,
+  },
+
+  /* GENERAL */
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 18,
+  },
+
+  card: {
+    backgroundColor: COLORS.card,
+
+    borderRadius: 28,
+
+    padding: 22,
+
+    marginBottom: 22,
+
+    shadowColor: "#000",
+
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+
+    elevation: 3,
+  },
+
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 18,
+  },
+
+  /* FILTROS */
+
   filtroGroup: {
-    marginBottom: 8,
+    marginBottom: 16,
   },
+
   filtroLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textLight,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontWeight: "700",
+    marginBottom: 10,
+    letterSpacing: 1,
   },
+
   filtroBtn: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
+
+    borderRadius: 14,
+
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+
+    marginRight: 10,
+
     backgroundColor: COLORS.card,
   },
+
   filtroBtnActivo: {
     backgroundColor: COLORS.primary,
+
     borderColor: COLORS.primary,
   },
+
   filtroBtnText: {
     fontSize: 13,
+    fontWeight: "600",
     color: COLORS.text,
   },
+
   filtroBtnTextActivo: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#FFFFFF",
   },
 
-  // Métricas
+  /* METRICS */
+
   metricsRow: {
-    marginBottom: 16,
+    marginBottom: 22,
   },
-  card: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
+
   metricCard: {
-    width: 160,
-    marginRight: 12,
-  },
-  badge: {
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  metricTitulo: {
-    fontSize: 10,
-    color: COLORS.textLight,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  metricValor: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  metricSubtitulo: {
-    fontSize: 11,
-    color: COLORS.textLight,
+    width: 220,
+
+    marginRight: 14,
+
+    borderRadius: 28,
+
+    padding: 22,
+
+    backgroundColor: "#FFFFFF",
+
+    shadowColor: "#000",
+
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+
+    elevation: 3,
   },
 
-  // Gráficos
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  chart: {
-    borderRadius: 8,
-  },
-
-  // Leyenda
-  legendRow: {
+  metricTop: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 6,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendText: {
-    fontSize: 12,
-    color: COLORS.textLight,
+    marginBottom: 18,
   },
 
-  // Restricciones
-  restriccionRow: {
-    marginBottom: 10,
-  },
-  restriccionLabel: {
-    fontSize: 12,
-    color: COLORS.text,
-    marginBottom: 4,
-    fontWeight: "600",
-  },
-  barContainer: {
-    height: 8,
-    backgroundColor: COLORS.border,
-    borderRadius: 4,
-    marginBottom: 3,
-    overflow: "hidden",
-  },
-  barFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
+  metricIcon: {
+    width: 50,
+    height: 50,
 
-  // Salud financiera
-  saludCard: {
-    alignItems: "center",
-  },
-  saludSubtitulo: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  saludCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 8,
-    borderColor: COLORS.border,
+    borderRadius: 18,
+
     justifyContent: "center",
     alignItems: "center",
   },
-  saludPorcentaje: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.text,
+
+  badge: {
+    fontSize: 11,
+    fontWeight: "700",
   },
-  saludUtilizado: {
-    fontSize: 9,
+
+  metricTitulo: {
+    fontSize: 12,
     color: COLORS.textLight,
+    fontWeight: "700",
+    marginBottom: 10,
+    letterSpacing: 1,
+  },
+
+  metricValor: {
+    fontSize: 40,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+
+  metricSubtitulo: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    lineHeight: 18,
+  },
+
+  /* CHART */
+
+  chart: {
+    borderRadius: 16,
+  },
+
+  /* RESTRICCIONES */
+
+  restriccionRow: {
+    marginBottom: 18,
+  },
+
+  restriccionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+
+  restriccionLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+
+  restriccionValue: {
+    fontSize: 12,
+    color: "#64748B",
     fontWeight: "600",
+  },
+
+  barContainer: {
+    height: 10,
+    backgroundColor: COLORS.border,
+
+    borderRadius: 10,
+
+    overflow: "hidden",
+  },
+
+  barFill: {
+    height: "100%",
+    borderRadius: 10,
+  },
+
+  /* SALUD */
+
+  saludCard: {
+    alignItems: "center",
+  },
+
+  saludSubtitulo: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 22,
+  },
+
+  saludCircle: {
+    width: 140,
+    height: 140,
+
+    borderRadius: 70,
+
+    borderWidth: 12,
+
+    borderColor: COLORS.border,
+
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  saludPorcentaje: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+
+  saludUtilizado: {
+    marginTop: 4,
+
+    fontSize: 11,
+    fontWeight: "700",
+
+    letterSpacing: 1,
+
+    color: "#64748B",
+  },
+
+  /* MENU */
+
+  overlay: {
+    position: "absolute",
+
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+
+    backgroundColor: "rgba(0,0,0,0.25)",
+
+    justifyContent: "flex-start",
+
+    alignItems: "flex-end",
+  },
+
+  sideMenu: {
+    width: 280,
+    height: "100%",
+
+    backgroundColor: "#FFFFFF",
+
+    paddingTop: 70,
+    paddingHorizontal: 22,
+
+    shadowColor: "#000",
+
+    shadowOffset: {
+      width: -3,
+      height: 0,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+
+    elevation: 10,
+  },
+
+  menuHeader: {
+    flexDirection: "row",
+
+    justifyContent: "space-between",
+
+    alignItems: "center",
+
+    marginBottom: 34,
+  },
+
+  menuTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    paddingVertical: 18,
+
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+
+  menuText: {
+    marginLeft: 14,
+
+    fontSize: 15,
+    fontWeight: "600",
+
+    color: "#334155",
   },
 });
